@@ -1,0 +1,21 @@
+{
+  "onnx_model_file": "rul_model_edge.onnx",
+  "onnx_size_kb": 20090.6,
+  "iterations": 500,
+  "latency_native_us": {
+    "mean": 35007.4,
+    "median": 31605.5,
+    "p95": 49783.2,
+    "p99": 71161.8
+  },
+  "latency_onnx_us": {
+    "mean": 23.2,
+    "median": 19.8,
+    "p95": 28.4,
+    "p99": 117.9
+  },
+  "speedup_factor": 1510.71,
+  "max_prediction_disparity_cycles": 0.0,
+  "hardware_platform": "x86_64 CPU (Edge Gateway Architecture Emulation)",
+  "native_size_kb": 37004.6
+}

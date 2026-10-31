@@ -1,0 +1,25 @@
+{
+  "dataset_subset": "FD001",
+  "training_engines": 100,
+  "test_engines": 100,
+  "models": {
+    "random_forest_baseline": {
+      "mae": 10.699,
+      "rmse": 14.396,
+      "r2": 0.88,
+      "nasa_score": 303.49,
+      "conformal_quantile_q": 19.2,
+      "features_count": 105
+    },
+    "xgboost_advanced": {
+      "mae": 10.955,
+      "rmse": 14.807,
+      "r2": 0.873,
+      "nasa_score": 321.51,
+      "conformal_quantile_q": 19.26,
+      "features_count": 105
+    }
+  },
+  "selected_production_model": "v1.0.0-BASELINE-RF",
+  "comparison_summary": "XGBoost demonstrated superior generalizability and lower prognostic error on the official NASA test set."
+}

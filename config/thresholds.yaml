@@ -1,0 +1,36 @@
+# AURA-M Triage Agent & Fleet Prioritization Thresholds
+
+triage_agent:
+  policy_version: "2026.1-PROD"
+  rul_thresholds:
+    normal_monitoring_min: 100.0        # RUL > 100: Normal
+    scheduled_inspection_min: 50.0      # 50 <= RUL <= 100: Scheduled inspection
+    high_priority_maintenance_min: 20.0 # 20 <= RUL < 50: High priority maintenance
+    critical_maintenance_max: 20.0      # RUL < 20: Critical maintenance
+  
+  anomaly_triggers:
+    anomaly_score_threshold: 0.65       # Normalized anomaly score > 0.65 triggers priority elevation
+    rapid_degradation_slope: -0.85      # Significant negative slope in rolling health index
+
+  uncertainty_policy:
+    max_acceptable_interval_width: 45.0 # Cycles. If prediction interval width > 45, route to HUMAN_VERIFICATION
+    confidence_alpha: 0.10              # 90% coverage target
+
+  work_order_rules:
+    deduplication_enabled: true         # Prevent duplicate open work orders for same engine
+    auto_escalation: true               # If existing inspection exists but RUL dropped below 20, escalate to critical
+    allow_human_override: true
+
+fleet_prioritization:
+  # Multi-factor risk composite scoring weights (must sum to 1.0)
+  weights:
+    rul_proximity: 0.40      # Higher score as RUL approaches zero
+    degradation_rate: 0.25   # Rate of change / slope of sensor degradation
+    anomaly_severity: 0.20   # Isolation Forest anomaly score
+    uncertainty_risk: 0.15   # High uncertainty adds operational risk buffer
+  
+  risk_bands:
+    critical: 75.0           # Priority Score >= 75
+    high: 55.0               # 55 <= Score < 75
+    medium: 35.0             # 35 <= Score < 55
+    low: 0.0                 # Score < 35

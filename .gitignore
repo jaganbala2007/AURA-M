@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Data & Model Artifacts (large files)
+data/auram.db
+data/mlflow.db
+data/raw/*.txt
+models/trained/*.pkl
+models/onnx/*.onnx
+mlruns/
+mlartifacts/
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Streamlit
+.streamlit/
+
+# Reports
+reports/*.html
+reports/*.json
+
+# Misc
+*.log
+*.bak
+*.tmp

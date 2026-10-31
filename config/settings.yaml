@@ -1,0 +1,64 @@
+project:
+  name: "AURA-M"
+  full_name: "Autonomous, Uncertainty-Aware Reliability Intelligence"
+  version: "1.0.0"
+  tagline: "From Machine Degradation to Autonomous, Evidence-Backed Maintenance"
+  competition: "TELIPORT S4 - Case Study 1"
+
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  sample_dir: "data/sample"
+  default_subset: "FD001"
+  available_subsets: ["FD001", "FD002", "FD003", "FD004"]
+  rul_clip_limit: 125  # Piecewise-linear RUL upper threshold to match degradation onset
+  rolling_windows: [5, 15, 30]
+  # In FD001, sensors s_1, s_5, s_10, s_16, s_18, s_19 have near-zero variance (constant)
+  constant_sensors_fd001: ["s_1", "s_5", "s_10", "s_16", "s_18", "s_19"]
+  informative_sensors: [
+    "s_2", "s_3", "s_4", "s_6", "s_7", "s_8", "s_9", 
+    "s_11", "s_12", "s_13", "s_14", "s_15", "s_17", "s_20", "s_21"
+  ]
+
+models:
+  save_dir: "models/trained"
+  metadata_dir: "models/metadata"
+  anomaly:
+    model_type: "isolation_forest"
+    n_estimators: 150
+    contamination: 0.12
+    random_state: 42
+  rul_baseline:
+    model_type: "random_forest"
+    n_estimators: 150
+    max_depth: 14
+    min_samples_split: 5
+    random_state: 42
+  rul_advanced:
+    model_type: "xgboost"
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    random_state: 42
+  uncertainty:
+    method: "conformalized_residual_quantile"
+    confidence_level: 0.90  # 90% prediction interval
+    high_uncertainty_threshold: 45.0  # cycles width
+
+database:
+  db_path: "data/auram.db"
+
+mlflow:
+  tracking_uri: "sqlite:///data/mlflow.db"
+  experiment_name: "AURA-M_Reliability_Platform"
+
+api:
+  host: "127.0.0.1"
+  port: 8000
+  reload: false
+
+dashboard:
+  host: "127.0.0.1"
+  port: 8501
