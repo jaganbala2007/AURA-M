@@ -40,8 +40,8 @@ mlartifacts/
 htmlcov/
 .coverage
 
-# Streamlit
-.streamlit/
+# Streamlit (keep config.toml tracked for cloud deployment)
+# .streamlit/
 
 # Reports
 reports/*.html

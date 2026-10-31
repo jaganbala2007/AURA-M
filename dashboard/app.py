@@ -121,18 +121,89 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Shared Cache Resources
+# Shared Cache Resources - with cloud/demo mode fallback
+DEMO_MODE = not Path("data/auram.db").exists() or not Path("data/raw/train_FD001.txt").exists()
+
 @st.cache_resource
 def get_db():
-    return DatabaseManager(db_path="data/auram.db")
+    try:
+        return DatabaseManager(db_path="data/auram.db")
+    except Exception:
+        return None
+
+@st.cache_data
+def get_demo_fleet():
+    """Generate synthetic fleet data for demo/cloud mode."""
+    np.random.seed(42)
+    n = 100
+    engines = []
+    for i in range(1, n+1):
+        rul = max(1, int(np.random.exponential(45)))
+        hi = round(max(0.05, min(1.0, 1.0 - (125 - rul) / 130 + np.random.normal(0, 0.05))), 3)
+        if rul <= 20:
+            status = "CRITICAL_DEGRADATION"
+        elif rul <= 45:
+            status = "SIGNIFICANT_DEGRADATION"
+        elif rul <= 80:
+            status = "MODERATE_WEAR"
+        else:
+            status = "HEALTHY"
+        engines.append({
+            "engine_id": i,
+            "current_rul": rul,
+            "current_health_status": status,
+            "health_index": hi,
+            "anomaly_score": round(np.random.beta(2, 5), 3),
+            "last_cycle_observed": int(np.random.randint(50, 300)),
+            "risk_score": round(1.0 - hi, 3)
+        })
+    return engines
+
+@st.cache_data
+def get_demo_train_df():
+    """Synthetic C-MAPSS-like training data for demo."""
+    np.random.seed(0)
+    rows = []
+    for eng in range(1, 21):
+        life = np.random.randint(150, 300)
+        for c in range(1, life+1):
+            t = c / life
+            rows.append({
+                "engine_id": eng, "cycle": c,
+                "T30": 1580 + 40*t + np.random.normal(0,2),
+                "T50": 1400 + 50*t + np.random.normal(0,3),
+                "Ps30": 550 - 15*t + np.random.normal(0,1),
+                "Nc": 8900 + 200*t + np.random.normal(0,10),
+                "RUL": max(0, life - c)
+            })
+    return pd.DataFrame(rows)
 
 @st.cache_resource
 def get_dataset():
-    loader = CMAPSSDataLoader(data_dir="data/raw")
-    return loader.load_subset("FD001", clip_rul=125)
+    try:
+        loader = CMAPSSDataLoader(data_dir="data/raw")
+        return loader.load_subset("FD001", clip_rul=125)
+    except Exception:
+        df = get_demo_train_df()
+        return df, df.tail(500), pd.Series(np.random.randint(5, 100, 100))
 
 db = get_db()
-train_df, test_df, test_rul = get_dataset()
+try:
+    train_df, test_df, test_rul = get_dataset()
+except Exception:
+    train_df = get_demo_train_df()
+    test_df = train_df.tail(500)
+    test_rul = pd.Series(np.random.randint(5, 100, 100))
+
+if DEMO_MODE:
+    st.sidebar.markdown("""
+    <div style='background:#1E293B;border:1px solid #0EA5E9;border-radius:6px;padding:10px;margin-bottom:12px;'>
+    <b style='color:#0EA5E9;'>🔬 DEMO MODE</b><br>
+    <span style='color:#94A3B8;font-size:12px;'>Running with synthetic fleet data.<br>
+    Deploy locally with NASA C-MAPSS dataset for full functionality.</span>
+    </div>
+    """, unsafe_allow_html=True)
+
 
 # Top Navigation Bar
 st.markdown("""
@@ -175,15 +246,15 @@ sidebar_nav = st.sidebar.radio(
 if sidebar_nav == "1. Executive Fleet Overview":
     st.subheader("Executive Fleet Reliability Overview")
     
-    engines = db.list_engines()
-    work_orders = db.list_work_orders()
+    engines = (db.list_engines() if db else None) or get_demo_fleet()
+    work_orders = (db.list_work_orders() if db else []) or []
     
-    total_eng = len(engines) if engines else 100
+    total_eng = len(engines)
     healthy_eng = sum(1 for e in engines if e.get("current_health_status") == "HEALTHY")
     moderate_eng = sum(1 for e in engines if e.get("current_health_status") == "MODERATE_WEAR")
     critical_eng = sum(1 for e in engines if e.get("current_health_status") in ["CRITICAL_DEGRADATION", "SIGNIFICANT_DEGRADATION"])
     open_wo = sum(1 for w in work_orders if w.get("status") in ["OPEN", "IN_PROGRESS", "ESCALATED"])
-    avg_rul = np.mean([e.get("current_rul", 125.0) for e in engines]) if engines else 85.0
+    avg_rul = np.mean([e.get("current_rul", 125.0) for e in engines])
 
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
